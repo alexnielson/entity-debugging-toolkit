@@ -1,0 +1,12 @@
+1|2019|San Juan Conservation District|General||||District||||||||||RV|45000 · Other Income|||||||Not Provided|||12/10/2019|45000 · Other Income|118|||||||18.04| |100-500600-30060000
+2|2019|San Juan Conservation District|General||||District||||||||||RV|45000 · Other Income|||||||Not Provided|||12/31/2019|45000 · Other Income|119|||||||380.49| |100-500600-30060000
+3|2019|San Juan Conservation District|General||||District||||||||||EX|60000 · District Operations|62000 · Educational Programs||||||Castleland RC & D|||12/10/2019|62000 · Educational Programs|108|||||||500.00| |100-500600-40020900
+4|2019|San Juan Conservation District|General||||District||||||||||EX|60000 · District Operations|64000 · Payroll Expenses||||||UACD|||12/10/2019|64000 · Payroll Expenses|107|||||||539.36| |100-500600-40010000
+5|2019|San Juan Conservation District|General||||District||||||||||EX|60000 · District Operations|64100 · Other - District Operations||||||Utah Local Goverments Trust|||10/8/2019|64100 · Other - District Operations|112|||||||100.00| |100-500600-40020100
+6|2019|San Juan Conservation District|General||||District||||||||||EX|75000 · Other Expenses|||||||Cedar Mesa Pottery|||12/10/2019|75000 · Other Expenses|106|||||||259.50| |100-500600-40000000
+7|2019|San Juan Conservation District|General||||District||||||||||EX|75000 · Other Expenses|||||||Terri Laws|||8/19/2019|75000 · Other Expenses|109|||||||60.00| |100-500600-40000000
+8|2019|San Juan Conservation District|General||||District||||||||||EX|75000 · Other Expenses|||||||Not Applicable|||9/11/2019|75000 · Other Expenses|110|||||||-17.00| |100-500600-40000000
+9|2019|San Juan Conservation District|General||||District||||||||||EX|75000 · Other Expenses|||||||Not Applicable|||10/11/2019|75000 · Other Expenses|111|||||||3.00| |100-500600-40000000
+10|2019|San Juan Conservation District|General||||District||||||||||EX|75000 · Other Expenses|||||||Not Applicable|||11/11/2019|75000 · Other Expenses|113|||||||3.00| |100-500600-40000000
+11|2019|San Juan Conservation District|General||||District||||||||||EX|75000 · Other Expenses|||||||DeAnn Ivins|||12/10/2019|75000 · Other Expenses|114|||||||200.00| |100-500600-40000000
+12|2019|San Juan Conservation District|General||||District||||||||||EX|75000 · Other Expenses|||||||Not Applicable|||12/11/2019|75000 · Other Expenses|115|||||||3.00| |100-500600-40000000

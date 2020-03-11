@@ -1,0 +1,86 @@
+---
+title: "batch-evaluation"
+author: "Alexander Nielson"
+date: "2/19/2020"
+output: html_document
+---
+
+
+# Libraries 
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(odbc)
+```
+
+```{r}
+dsn_aws        <- "transpAWS"
+odbc_aws <- dbConnect(odbc::odbc(), dsn_aws)
+```
+
+
+```{r}
+
+# go to secure.utah.gov and get the batch_id.  
+ 
+batch_file <- 
+      dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT *
+              FROM transaction
+              WHERE batch_id = 64721"))
+```
+
+#get posting of unique dates
+```{r}
+date_tibble <- batch_file %>% select(posting_date,type) %>% table() %>% as_tibble() %>% filter(n !=0)
+revenues <-date_tibble %>% filter(type == 1)
+expenditures <- date_tibble %>% filter(type == 2 )
+w2 <- date_tibble %>% filter(type == 3)
+```
+
+
+```{r}
+revenues
+```
+
+```{r}
+expenditures
+```
+```{r}
+w2
+```
+
+
+#check for missing values
+```{r}
+batch_file <- batch_file %>%
+  mutate(
+    missing_amount = is.na(amount),
+    missing_date = is.na(posting_date),
+    missing_uca = is.na(account_number)
+  )
+
+missing_problems <- batch_file %>% 
+  filter(missing_amount == TRUE || missing_date==TRUE || missing_uca == TRUE)
+
+```
+
+# dimension check
+```{r}
+dimensions <- dim(batch_file)
+num_records <-  dimensions %>% pluck(1)
+num_columns <- dimensions %>% pluck(2)
+```
+
+# amount check
+```{r}
+net_amount <- batch_file %>% select(amount) %>% sum()
+```
+
+
+
+
+

@@ -1,0 +1,115 @@
+---
+title: "shelter-the-homeless-analysis"
+author: "Alexander Nielson"
+date: "2/28/2020"
+output: html_document
+---
+
+# Libraries 
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(odbc)
+```
+
+```{r}
+dsn_aws        <- "transpAWS"
+odbc_aws <- dbConnect(odbc::odbc(), dsn_aws)
+```
+
+
+```{r}
+
+# go to secure.utah.gov and get the batch_id.  
+ 
+entity_list <- 
+      dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT *
+              FROM entity
+              "))
+```
+
+```{r}
+entity_list %>% filter(str_detect(name,"home"))
+```
+
+```{r}
+ sth_vendor_ids<-     dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT *
+              FROM vendor
+              WHERE name LIKE '%shelter the homeless%' OR name LIKE '%SHELTER THE HOMELESS%' OR name LIKE '%Shelter The Homeless%'
+              LIMIT 100
+              "))
+```
+
+```{r}
+sth_vendor_ids
+```
+
+
+```{r}
+sth_transactions <- 
+      dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT v.id AS vendor_id,
+                     v.name AS vendor_name,
+                     t.id AS transaction_id,
+                     t.batch_id AS batch_id,
+                     t.fiscal_year AS fiscal_year,
+                     t.amount AS amount,
+                     t.description AS description,
+                     t.type AS transaction_type
+              FROM vendor v
+              JOIN transaction t 
+                ON t.vendor_id = v.id
+              WHERE name LIKE '%shelter the homeless%' 
+                 OR name LIKE '%SHELTER THE HOMELESS%' 
+                 OR name LIKE '%Shelter The Homeless%'
+                 OR name LIKE '%shelter the%'
+                 OR name like '%helter the%'
+              
+              "))
+
+
+              # WHERE name LIKE '%shelter the homeless%' 
+              #    OR name LIKE '%SHELTER THE HOMELESS%' 
+              #    OR name LIKE '%Shelter The Homeless%'
+              #    OR name LIKE '%shelter the%'
+              #    OR name like '%helter the%'
+
+```
+
+```{r}
+sth_transactionss
+```
+
+
+
+```{r}
+sth_agg <- sth_transactions %>% filter(transaction_type ==1) %>% 
+  group_by(fiscal_year) %>% 
+  summarize(amount = sum(amount),
+            num_of_trans = n())
+```
+
+
+```{r}
+sth_agg
+```
+
+
+```{r}
+write.csv(sth_transactions,"E:/rprojects/entity-debugging-toolkit/sth_transactions.csv", row.names = FALSE)
+```
+
+```{r}
+write.csv(sth_agg,"E:/rprojects/entity-debugging-toolkit/sth_summary.csv", row.names = FALSE)
+```
+
+

@@ -1,0 +1,242 @@
+---
+title: "sth-deeper-analysis"
+author: "Alexander Nielson"
+date: "3/2/2020"
+output: html_document
+---
+
+# Libraries 
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(odbc)
+```
+
+```{r}
+dsn_aws        <- "transpAWS"
+odbc_aws <- dbConnect(odbc::odbc(), dsn_aws)
+```
+
+
+```{r}
+
+# go to secure.utah.gov and get the batch_id.  
+ 
+entity_list <- 
+      dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT *
+              FROM entity
+              "))
+```
+
+```{r}
+entity_list %>% filter(str_detect(name,"home"))
+```
+
+
+```{r}
+transaction_head <- 
+      dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT *
+              FROM transaction
+              LIMIT 100
+              "))
+```
+
+
+```{r}
+batch_head <- 
+      dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT *
+              FROM batch
+              LIMIT 100
+              "))
+```
+
+```{r}
+ sth_vendor_ids<-     dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT *
+              FROM vendor
+              WHERE name LIKE '%shelter the homeless%' OR name LIKE '%SHELTER THE HOMELESS%' OR name LIKE '%Shelter The Homeless%'
+              LIMIT 100
+              "))
+```
+
+```{r}
+sth_vendor_ids
+```
+# Get transactions with STH as a vendor id. 
+
+```{r}
+sth_transactions <- 
+      dbGetQuery(
+        odbc_aws,
+        paste("
+              SELECT  v.id AS vendor_id,
+                      v.name AS vendor_name,
+                      
+                      t.id AS transaction_id,
+                      t.batch_id AS batch_id,
+                      t.fiscal_year AS fiscal_year,
+                      t.amount AS amount,
+                      t.description AS description,
+                      t.type AS transaction_type,
+                      t.account_number as account_number
+              FROM vendor v
+              JOIN transaction t 
+                ON t.vendor_id = v.id
+              WHERE v.name LIKE '%shelter the homeless%' 
+                 OR v.name LIKE '%SHELTER THE HOMELESS%' 
+                 OR v.name LIKE '%Shelter The Homeless%'
+                 OR v.name LIKE '%shelter the%'
+                 OR v.name like '%helter the%'
+              "))
+
+```
+
+#query all the batchs witch have sth transactions. 
+```{r}
+sth_batch_ids <- sth_transactions %>% pull(batch_id) %>% unique() %>% paste(collapse = ", ")
+```
+
+#find all the batches and by extension the entities with sth transactions
+```{r}
+entities_and_batches <- 
+        dbGetQuery(
+        odbc_aws,
+        paste("SELECT e.name AS entity_name,
+                      e.govt_lvl AS gov_level,
+                      b.id AS batch_id
+        
+                FROM entity e
+                JOIN batch b
+                  ON e.id = b.entity_id
+                WHERE b.id IN (",sth_batch_ids,")
+              "))
+             
+```
+
+#join the original transactions, so it is more informative. 
+```{r}
+joined_report <- sth_transactions %>% 
+  left_join(entities_and_batches,
+            by = c("batch_id" = "batch_id"))
+```
+
+## Load Lookup Table
+
+```{r}
+osa_lookup_file_name <- "osa_lookup.xlsx"
+
+osa_lookup <- excel_sheets(osa_lookup_file_name) %>%
+  map(read_excel, path = osa_lookup_file_name)
+
+names(osa_lookup) <- c("fund", "funct", "account")
+
+rm(osa_lookup_file_name)
+
+```
+
+#give the 
+```{r}
+uca_report <- joined_report %>% 
+  mutate(
+      fund                    = .[["account_number"]] %>% substr(0, 3),
+      funct                   = .[["account_number"]] %>% substr(5, 10),
+      account                 = .[["account_number"]] %>%  substr(12, 19),
+      # fund_code_primary       = str_sub(fund, 0, 2),
+      # fund_code_secondary     = str_sub(fund, 2, 3),
+      # funct_code_primary      = str_sub(funct, 0, 2),
+      # funct_code_secondary    = str_sub(funct, 3, 4),
+      # funct_code_tertiary     = str_sub(funct, 5, 6),
+      # account_code_primary    = str_sub(account, 0, 2),
+      # account_code_secondary  = str_sub(account, 3, 4),
+      # account_code_tertiary   = str_sub(account, 5, 6),
+      # account_code_quaternary = str_sub(account, 7, 8)
+    ) %>% 
+  left_join(
+      osa_lookup %>%
+        pluck("fund") %>%
+        as_tibble() %>%
+        select(
+          number,
+          fund_description = description,
+          # #lu_fund_code_primary = code_primary,
+          # #lu_fund_code_secondary = code_secondary,
+          # fund_level_primary = level_primary,
+          # fund_level_secondary = level_secondary
+        ),
+      by = c("fund" = "number")
+    ) %>%
+    # join the functions
+    left_join(
+      osa_lookup %>%
+        pluck("funct") %>%
+        as_tibble() %>%
+        select(
+          number,
+          funct_description = description,
+          # #lu_funct_code_primary = code_primary,
+          # #lu_funct_code_secondary = code_secondary,
+          # #lu_funct_code_tertiary = code_tertiary,
+          # funct_level_primary = level_primary,
+          # funct_level_secondary = level_secondary,
+          # funct_level_tertiary = level_tertiary
+        ),
+      by = c("funct" = "number")
+    ) %>%
+    # join the accounts
+    left_join(
+      osa_lookup %>%
+        pluck("account") %>%
+        as_tibble() %>%
+        select(
+          number,
+          account_description = description,
+          # #lu_account_code_primary = code_primary,
+          # #lu_account_code_secondary = code_secondary,
+          # #lu_account_code_tertiary = code_tertiary,
+          # account_level_primary = level_primary,
+          # account_level_secondary = level_secondary,
+          # account_level_tertiary = level_tertiary
+        ),
+      by = c("account" = "number")
+    )
+
+```
+
+#Find the grants from the transactions
+```{r}
+grants_report <- uca_report %>% filter(str_detect(str_to_lower(account_description), "grant"))
+grants_report
+```
+
+
+#Lets analyze by entity
+```{r}
+entity_report <- uca_report %>% group_by(entity_name, fiscal_year) %>% 
+  summarize(net_amount = sum(amount),
+            number_of_transactions = n())
+```
+
+#anylsis by uca code
+```{r}
+account_report <- uca_report %>% group_by(account_number, fund_description, funct_description, account_description, fiscal_year) %>% 
+  summarize(net_amount = sum(amount),
+            number_of_transactions = n())
+```
+
+
+```{r}
+write.csv(account_report,"E:/rprojects/entity-debugging-toolkit/account_report.csv", row.names = FALSE)
+```
+
